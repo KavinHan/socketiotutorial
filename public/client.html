@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Client</title>
+  <link rel="stylesheet" href="/css/ionic.min.css" media="screen" title="no title" charset="utf-8">
+  <style>
+    html,
+    body {
+      height: 100%;
+    }
+
+    .wrap {
+      height: 100%;
+    }
+    input {
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="bar bar-header">
+      <a href="index.html" class="button">home</a>
+      <h1 class="title">Socket.io Client</h1>
+    </div>
+    <div class="content padding has-header">
+      <div class="card">
+        <div id="statusDom" class="item item-text-wrap">
+          Connecting...
+        </div>
+      </div>
+      <div class="card">
+        <div class="item item-input-inset">
+          <span class="padding-right">Client Name: </span>
+          <label class="item-input-wrapper">
+            <input id="clientNameDom" class="k-w-100" type="text" placeholder="Input client name">
+          </label>
+        </div>
+      </div>
+      <div class="list">
+        <div class="item item-input-inset">
+          <span class="padding-right">Send Data: </span>
+          <label class="item-input-wrapper">
+            <input id="msgDom" type="text" placeholder="Input message">
+          </label>
+          <button id="submitBtn" class="button button-small button-positive">
+            Submit
+          </button>
+        </div>
+        <div class="item item-toggle">
+          Auto send random data
+          <label class="toggle toggle-assertive">
+            <input id="sendBtn" type="checkbox">
+            <div class="track">
+              <div class="handle"></div>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    var currentUrl = window.location.href;
+    var urlRes = new RegExp('[a-z]+:\/\/[a-z]+:[0-9]+');
+    var needUrl = currentUrl.match(urlRes);
+    var socket = io.connect(needUrl);
+
+    socket.on('status', function(data) {
+      var statusDom = document.getElementById('statusDom');
+      var msgDom = document.getElementById('msgDom');
+      var submitBtn = document.getElementById('submitBtn');
+      var sendBtn = document.getElementById('sendBtn');
+      var clientNameDom = document.getElementById('clientNameDom');
+      var clientName = '';
+      if (data.status) statusDom.innerHTML = 'Connect server success.^^';
+      else statusDom.innerHTML = 'Connect server failed.=,=';
+      socket.emit('save-client-id', {
+        id: socket.id
+      });
+
+      submitBtn.onclick = function() {
+        if (msgDom.value.length === 0) return false;
+        socket.emit('save-client-msg', {
+          id: socket.id,
+          name: clientName,
+          msg: msgDom.value
+        });
+      }
+      sendBtn.onchange = function(e) {
+        console.log(sendBtn.checked);
+        if (sendBtn.checked) sendTestDataToServer();
+        else {
+          if (timer) clearTimeout(timer);
+        }
+      }
+      clientNameDom.onchange = function(e) {
+        clientName = clientNameDom.value;
+      }
+
+      var timer = null;
+
+      function sendTestDataToServer() {
+        console.log('Sended');
+        socket.emit('save-client-msg', {
+          id: socket.id,
+          name: clientName,
+          msg: parseInt(Math.random() * 10000)
+        });
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(sendTestDataToServer, 100);
+      }
+    });
+  </script>
+</body>
+
+</html>

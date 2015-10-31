@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Server</title>
+  <link rel="stylesheet" href="/css/ionic.min.css" media="screen" title="no title" charset="utf-8">
+  <style>
+    html,
+    body {
+      height: 100%;
+    }
+
+    .wrap {
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="bar bar-header">
+      <a href="index.html" class="button">home</a>
+      <h1 class="title">Socket.io Server</h1>
+    </div>
+    <div class="content padding has-header">
+      <div class="card">
+        <div id="statusDom" class="item item-text-wrap">
+          Connecting...
+        </div>
+      </div>
+      <ul id="clientWrap" class="list">
+        <!-- inset new client in here -->
+      </ul>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // get server url
+    // currentUrl: http://localhost:8080/server.html
+    var currentUrl = window.location.href;
+    var urlRes     = new RegExp('[a-z]+:\/\/[a-z]+:[0-9]+');
+    // needUrl: http://localhost:8080
+    var needUrl    = currentUrl.match(urlRes);
+    // init socket.io
+    var socket     = io.connect(needUrl);
+
+    // listen 'status' event from server
+    socket.on('status', function(statusData) {
+      var statusDom   = document.getElementById('statusDom');
+      var clientWrap  = document.getElementById('clientWrap');
+      var clientItems = document.getElementsByClassName('client-item');
+
+      if (statusData.status) statusDom.innerHTML = 'Connect server success.^^';
+      else                   statusDom.innerHTML = 'Connect server failed.=,=';
+
+      socket.emit('save-server-id', { id: socket.id });
+
+      socket.on('update-client-msg', function(clientData) {
+        var _clientIDArr = clientData.clientIDArr;
+        var i, j, bDel, bPush, nameDom, msgDom;
+        // remove disconnected client
+        for (i = 0; i < clientItems.length; i++) {
+          bDel = true;
+          for (j = 0; j < _clientIDArr.length; j++) {
+            if (clientItems[i].socketId === _clientIDArr[j]) bDel = false;
+          }
+          if (bDel) clientWrap.removeChild(clientItems[i]);
+        }
+        // update or insert connected client
+        bPush = true;
+        for (i = 0; i < clientItems.length; i++) {
+          if (clientItems[i].socketId === clientData.client.id) {
+            clientItems[i].getElementsByClassName('client-name')[0].innerHTML = clientData.client.name || clientData.client.id;
+            clientItems[i].getElementsByClassName('client-msg')[0].innerHTML  = clientData.client.msg;
+            bPush = false;
+          }
+        }
+        if (bPush) createClientDom(clientData.client);
+      });
+
+      /** Use _obj make client element and insert to client wrap element
+       * @param {object} _obj = {
+                           id: 'socketId',
+                           name: 'client name',
+                           msg: 'client value'
+                         }
+         client element template:
+         <li class="item client-item">
+           <div class="row">
+             <span class="col col-20">Name:</span>
+             <span class="col col-80 client-name"></span>
+           </div>
+           <div class="row">
+             <span class="col col-20">Message:</span>
+             <span class="col col-80 client-msg"></span>
+           </div>
+         </li>
+       */
+
+      function createClientDom(_obj) {
+        // frag: temp dom element for save all child element
+        var frag                      = document.createDocumentFragment();
+
+        // liDom: <li class="item client-item">
+        var liDom                     = document.createElement('li');
+            liDom.className           = 'item client-item';
+            liDom.socketId            = 'asdfasdf';
+
+        // nameDiv: <div class="row">
+        var nameDiv                   = document.createElement('div');
+            nameDiv.className         = 'row';
+        // nameDivNameSpan: <span class="col col-20">Name:</span>
+        var nameDivNameSpan           = document.createElement('span');
+            nameDivNameSpan.className = 'col col-20';
+            nameDivNameSpan.innerHTML = 'Name';
+        nameDiv.appendChild(nameDivNameSpan);
+        // nameDivValSpan: <span class="col col-80 client-name"></span>
+        var nameDivValSpan            = document.createElement('span');
+            nameDivValSpan.className  = 'col col-80 client-name';
+            nameDivValSpan.innerHTML  = _obj.name || _obj.id;
+        nameDiv.appendChild(nameDivValSpan);
+        // nameDiv: </div>
+
+
+        // msgDiv: <div class="row">
+        var msgDiv                    = document.createElement('div');
+            msgDiv.className          = 'row';
+
+        // msgDivMsgSpan: <span class="col col-20">Message:</span>
+        var msgDivMsgSpan             = document.createElement('span');
+            msgDivMsgSpan.className   = 'col col-20';
+            msgDivMsgSpan.innerHTML   = 'Message';
+        msgDiv.appendChild(msgDivMsgSpan);
+        // msgDivValSpan: <span class="col col-80 client-msg"></span>
+        var msgDivValSpan             = document.createElement('span');
+            msgDivValSpan.className   = 'col col-80 client-msg';
+            msgDivValSpan.innerHTML   = _obj.msg;
+        msgDiv.appendChild(msgDivValSpan);
+        // nameDiv: </div>
+
+
+        liDom.appendChild(nameDiv);
+        liDom.appendChild(msgDiv);
+
+        liDom.socketId = _obj.id;
+        // liDom: </li>
+
+        //insert client to client wrap element
+        clientWrap.appendChild(liDom);
+      }
+    });
+  </script>
+</body>
+
+</html>

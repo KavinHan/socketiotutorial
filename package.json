@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "socketio tutorial",
   "main": "app.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "author": "kavin",
   "license": "MIT",
   "dependencies": {
